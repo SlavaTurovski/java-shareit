@@ -42,7 +42,7 @@ public class UserMemoryStorage implements UserStorage {
     }
 
     @Override
-    public User getById (Long userId) {
+    public User getById(Long userId) {
         Optional<User> user = Optional.ofNullable(users.get(userId));
         if (user.isEmpty()) {
             throw new NotFoundException("Пользователь с данным id не найден!");
