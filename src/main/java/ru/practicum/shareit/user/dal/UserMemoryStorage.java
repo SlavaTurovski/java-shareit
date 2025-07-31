@@ -5,19 +5,19 @@ import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public class UserMemoryStorage implements UserStorage {
     private final Map<Long, User> users = new HashMap<>();
+    private final Set<String> emails = new HashSet<>();
     private Long counterId = 0L;
 
     public void validateEmail(User newUser) {
-        boolean emailExist = users.values().stream()
-                .filter(user -> !user.getId().equals(newUser.getId()))
-                .anyMatch(user -> user.getEmail().equals(newUser.getEmail()));
-        if (emailExist) {
+        if (emails.contains(newUser.getEmail())) {
             throw new IllegalArgumentException("Пользователь с таким email уже существует!");
         }
     }
@@ -27,13 +27,23 @@ public class UserMemoryStorage implements UserStorage {
         validateEmail(user);
         user.setId(++counterId);
         users.put(user.getId(), user);
+        emails.add(user.getEmail());
         return user;
     }
 
     @Override
     public User update(User user) {
-        validateEmail(user);
-        return users.put(user.getId(), user);
+        User existingUser = users.get(user.getId());
+        if (existingUser == null) {
+            throw new NotFoundException("Пользователь не найден!");
+        }
+        if (!existingUser.getEmail().equals(user.getEmail())) {
+            validateEmail(user);
+            emails.remove(existingUser.getEmail());
+            emails.add(user.getEmail());
+        }
+        users.put(user.getId(), user);
+        return user;
     }
 
     @Override

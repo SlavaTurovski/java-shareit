@@ -19,6 +19,8 @@ import ru.practicum.shareit.item.service.ItemService;
 import java.util.Collection;
 import java.util.List;
 
+import static ru.practicum.shareit.HeaderConstants.HEADER_USER_ID;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -28,7 +30,7 @@ public class ItemController {
 
     @PostMapping
     public ItemDto add(@Valid @RequestBody RequestItemDto requestItemDto,
-                       @RequestHeader("X-Sharer-User-Id") Long userId) {
+                       @RequestHeader(HEADER_USER_ID) Long userId) {
         log.trace("Добавление предмета (старт)");
         return itemService.add(userId, requestItemDto);
     }
@@ -36,7 +38,7 @@ public class ItemController {
     @PatchMapping("/{itemsId}")
     public ItemDto update(@PathVariable Long itemsId,
                           @RequestBody RequestItemDto requestItemDto,
-                          @RequestHeader("X-Sharer-User-Id") Long userId) {
+                          @RequestHeader(HEADER_USER_ID) Long userId) {
         log.trace("Обновление предмета с id: {} (старт)", itemsId);
         return itemService.update(itemsId, requestItemDto, userId);
     }
@@ -48,7 +50,7 @@ public class ItemController {
     }
 
     @GetMapping
-    public Collection<ItemDto> getItemsByOwner(@RequestHeader("X-Sharer-User-Id") Long userId) {
+    public Collection<ItemDto> getItemsByOwner(@RequestHeader(HEADER_USER_ID) Long userId) {
         log.trace("Получение предметов пользователя с id: {} (старт)", userId);
         return itemService.getItemsByOwner(userId);
     }
