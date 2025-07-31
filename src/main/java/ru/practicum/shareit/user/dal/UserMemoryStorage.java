@@ -75,7 +75,7 @@ public class UserMemoryStorage implements UserStorage {
     public void delete(Long userId) {
         User removedUser = users.remove(userId);
         if (removedUser != null) {
-            emails.remove(removedUser.getEmail()); // удаляем email из Set при удалении пользователя
+            emails.remove(removedUser.getEmail());
         }
     }
 
