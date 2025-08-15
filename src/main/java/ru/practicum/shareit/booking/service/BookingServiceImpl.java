@@ -9,6 +9,8 @@ import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.RequestBookingDto;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.strategies.BookingQueryStrategy;
+import ru.practicum.shareit.booking.factory.BookingQueryStrategyFactory;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dal.ItemStorage;
@@ -16,7 +18,6 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.dal.UserStorage;
 import ru.practicum.shareit.user.model.User;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -89,14 +90,9 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingDto> getUserBookings(Long userId, State state) {
         userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден: " + userId));
-        List<Booking> userBookings = switch (state) {
-            case CURRENT -> bookingStorage.findCurrentByBookerId(userId, LocalDateTime.now());
-            case WAITING -> bookingStorage.findByBookerIdAndStatus(userId, Status.WAITING);
-            case PAST -> bookingStorage.findByBookerIdAndStatusAndEndBefore(userId, Status.APPROVED, LocalDateTime.now());
-            case REJECTED -> bookingStorage.findByBookerIdAndStatus(userId, Status.REJECTED);
-            case FUTURE -> bookingStorage.findByBookerIdAndStartAfter(userId, LocalDateTime.now());
-            default -> bookingStorage.findByBookerIdOrderByStartDesc(userId);
-        };
+        BookingQueryStrategy strategy =
+                BookingQueryStrategyFactory.create(state, bookingStorage);
+        List<Booking> userBookings = strategy.getBookings(userId);
         return userBookings.stream()
                 .map(BookingMapper::mapToBookingDto)
                 .collect(Collectors.toList());
@@ -104,23 +100,16 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getOwnerBookings(Long ownerId, State state) {
-        userStorage.findById(ownerId).orElseThrow(() -> new NotFoundException("Пользователь не найден: " + ownerId));
-
+        userStorage.findById(ownerId)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден: " + ownerId));
         if (itemStorage.findByOwnerId(ownerId).isEmpty()) {
             throw new NotFoundException("У данного пользователя нет предметов!");
         }
-
-        List<Booking> ownerBookings = switch (state) {
-            case CURRENT -> bookingStorage.findCurrentByOwnerId(ownerId, LocalDateTime.now());
-            case WAITING -> bookingStorage.findByItemOwnerIdAndStatus(ownerId, Status.WAITING);
-            case PAST -> bookingStorage.findByItemOwnerIdAndStatusAndEndBefore(ownerId, Status.APPROVED, LocalDateTime.now());
-            case REJECTED -> bookingStorage.findByItemOwnerIdAndStatus(ownerId, Status.REJECTED);
-            case FUTURE -> bookingStorage.findByItemOwnerIdAndStartAfter(ownerId, LocalDateTime.now());
-            default -> bookingStorage.findByItemOwnerIdOrderByStartDesc(ownerId);
-        };
-
+        BookingQueryStrategy strategy =
+                BookingQueryStrategyFactory.create(state, bookingStorage);
+        List<Booking> ownerBookings = strategy.getBookings(ownerId);
         return ownerBookings.stream()
-                .map(BookingMapper::mapToBookingDto)
+                .map(BookingMapper::mapToBookingDto )
                 .collect(Collectors.toList());
     }
 

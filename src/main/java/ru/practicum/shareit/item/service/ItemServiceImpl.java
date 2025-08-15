@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.Status;
 import ru.practicum.shareit.booking.dal.BookingStorage;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
@@ -76,6 +77,10 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemDto> getItemsByOwner(Long userId) {
         List<Item> items = itemStorage.findByOwnerId(userId);
+        if (items.isEmpty()) {
+            return List.of();
+        }
+
         List<Long> itemIds = items.stream()
                 .map(Item::getId)
                 .collect(Collectors.toList());
@@ -84,19 +89,50 @@ public class ItemServiceImpl implements ItemService {
                 .collect(Collectors.groupingBy(c -> c.getItem().getId()));
 
         List<Booking> bookings = bookingStorage.findAllByItemIdIn(itemIds);
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Booking> approvedBookings = bookings.stream()
+                .filter(b -> b.getStatus() == Status.APPROVED)
+                .toList();
 
         Map<Long, BookingDto> lastBookings = new HashMap<>();
         Map<Long, BookingDto> nextBookings = new HashMap<>();
-        LocalDateTime now = LocalDateTime.now();
 
-        for (Booking booking : bookings) {
-            BookingDto dto = BookingMapper.mapToBookingDto(booking);
-            Long itemId = booking.getItem().getId();
-            if (booking.getStart().isBefore(now)) {
-                lastBookings.put(itemId, dto);
-            } else {
-                nextBookings.put(itemId, dto);
+        for (Long itemId : itemIds) {
+            List<Booking> itemBookings = approvedBookings.stream()
+                    .filter(b -> b.getItem().getId().equals(itemId))
+                    .toList();
+
+            BookingDto lastBookingDto = null;
+            LocalDateTime maxEndBeforeNow = null;
+
+            for (Booking b : itemBookings) {
+                if (b.getEnd() != null && b.getEnd().isBefore(now)) {
+                    if (maxEndBeforeNow == null || b.getEnd().isAfter(maxEndBeforeNow)) {
+                        maxEndBeforeNow = b.getEnd();
+                        lastBookingDto = BookingMapper.mapToBookingDto(b);
+                    }
+                } else if ((b.getEnd() == null || !b.getEnd().isBefore(now)) && b.getStart() != null && b.getStart().isBefore(now)) {
+                    if (maxEndBeforeNow == null || b.getStart().isAfter(maxEndBeforeNow)) {
+                        maxEndBeforeNow = b.getStart();
+                        lastBookingDto = BookingMapper.mapToBookingDto(b);
+                    }
+                }
             }
+            lastBookings.put(itemId, lastBookingDto);
+
+            BookingDto nextBookingDto = null;
+            LocalDateTime minStartAfterNow = null;
+
+            for (Booking b : itemBookings) {
+                if (b.getStart() != null && b.getStart().isAfter(now)) {
+                    if (minStartAfterNow == null || b.getStart().isBefore(minStartAfterNow)) {
+                        minStartAfterNow = b.getStart();
+                        nextBookingDto = BookingMapper.mapToBookingDto(b);
+                    }
+                }
+            }
+            nextBookings.put(itemId, nextBookingDto);
         }
 
         return items.stream()
