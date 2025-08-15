@@ -1,17 +1,23 @@
 package ru.practicum.shareit.booking.strategies;
 
+import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.State;
 import ru.practicum.shareit.booking.dal.BookingStorage;
 import ru.practicum.shareit.booking.model.Booking;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class CurrentBookingStrategy implements BookingQueryStrategy {
-
-    private final BookingStorage bookingStorage;
+@Service
+public class CurrentBookingStrategy extends BookingQueryStrategy {
 
     public CurrentBookingStrategy(BookingStorage bookingStorage) {
-        this.bookingStorage = bookingStorage;
+        super(bookingStorage);
+    }
+
+    @Override
+    public State getState() {
+        return State.CURRENT;
     }
 
     @Override

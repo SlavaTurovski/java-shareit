@@ -1,5 +1,7 @@
 package ru.practicum.shareit.booking.strategies;
 
+import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.State;
 import ru.practicum.shareit.booking.Status;
 import ru.practicum.shareit.booking.dal.BookingStorage;
 import ru.practicum.shareit.booking.model.Booking;
@@ -7,11 +9,16 @@ import ru.practicum.shareit.booking.model.Booking;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class PastBookingStrategy implements BookingQueryStrategy {
-    private final BookingStorage bookingStorage;
+@Service
+public class PastBookingStrategy extends BookingQueryStrategy {
 
     public PastBookingStrategy(BookingStorage bookingStorage) {
-        this.bookingStorage = bookingStorage;
+        super(bookingStorage);
+    }
+
+    @Override
+    public State getState() {
+        return State.PAST;
     }
 
     @Override

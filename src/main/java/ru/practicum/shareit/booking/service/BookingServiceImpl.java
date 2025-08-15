@@ -27,6 +27,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingStorage bookingStorage;
     private final UserStorage userStorage;
     private final ItemStorage itemStorage;
+    private final BookingQueryStrategyFactory strategyFactory;
 
     @Override
     public BookingDto addBooking(RequestBookingDto requestBookingDto, Long userId) {
@@ -90,8 +91,7 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingDto> getUserBookings(Long userId, State state) {
         userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден: " + userId));
-        BookingQueryStrategy strategy =
-                BookingQueryStrategyFactory.create(state, bookingStorage);
+        BookingQueryStrategy strategy = strategyFactory.getStrategyByState(state);
         List<Booking> userBookings = strategy.getBookings(userId);
         return userBookings.stream()
                 .map(BookingMapper::mapToBookingDto)
@@ -105,8 +105,7 @@ public class BookingServiceImpl implements BookingService {
         if (itemStorage.findByOwnerId(ownerId).isEmpty()) {
             throw new NotFoundException("У данного пользователя нет предметов!");
         }
-        BookingQueryStrategy strategy =
-                BookingQueryStrategyFactory.create(state, bookingStorage);
+        BookingQueryStrategy strategy = strategyFactory.getStrategyByState(state);
         List<Booking> ownerBookings = strategy.getBookings(ownerId);
         return ownerBookings.stream()
                 .map(BookingMapper::mapToBookingDto)
