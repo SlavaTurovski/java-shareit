@@ -5,7 +5,6 @@ import ru.practicum.shareit.booking.State;
 import ru.practicum.shareit.booking.dal.BookingStorage;
 import ru.practicum.shareit.booking.model.Booking;
 
-import java.util.Collections;
 import java.util.List;
 
 @Service
