@@ -109,7 +109,7 @@ public class BookingServiceImpl implements BookingService {
                 BookingQueryStrategyFactory.create(state, bookingStorage);
         List<Booking> ownerBookings = strategy.getBookings(ownerId);
         return ownerBookings.stream()
-                .map(BookingMapper::mapToBookingDto )
+                .map(BookingMapper::mapToBookingDto)
                 .collect(Collectors.toList());
     }
 
