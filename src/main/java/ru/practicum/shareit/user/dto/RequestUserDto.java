@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 public class RequestUserDto {
+
     private String name;
 
     @Email(message = "Ошибка при вводе email!")
